@@ -170,12 +170,7 @@ if [[ ! -d "$DOTFILES_DIR" ]]; then
     print_info "Clonando desde: $REPO_URL"
     log "Cloning from: $REPO_URL"
 
-    # Configure gh as credential helper for HTTPS (before cloning)
-    print_info "Configurando autenticación GitHub para HTTPS..."
-    git config --global --unset-all credential.helper 2>/dev/null || true
-    git config --global credential.helper "!gh auth git-credential"
-    log "Configured gh as git credential helper"
-
+    # Clone with gh (uses gh auth directly, no git config needed)
     if gh repo clone "${GH_USER}/dotfiles" "$DOTFILES_DIR" -- --recurse-submodules; then
         print_success "Dotfiles clonados correctamente"
         log "SUCCESS: Dotfiles cloned"
@@ -184,6 +179,12 @@ if [[ ! -d "$DOTFILES_DIR" ]]; then
         log "ERROR: Failed to clone dotfiles"
         exit 1
     fi
+
+    # Configure gh as credential helper for future git operations (after clone)
+    print_info "Configurando autenticación GitHub para HTTPS..."
+    git config --global --replace-all credential.helper "!gh auth git-credential" || \
+        git config --global credential.helper "!gh auth git-credential"
+    log "Configured gh as git credential helper"
 else
     print_info "Actualizando submodules..."
     cd "$DOTFILES_DIR"
